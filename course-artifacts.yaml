@@ -1,0 +1,21 @@
+# overheat-model course artifact manifest (S11). Schema: dbai/course-artifacts/v1
+# (esade-devops contracts/course-artifacts.schema.md). Records the qualified S11 lab runtime.
+schema: dbai/course-artifacts/v1
+baseline_version: "1.0.0"
+
+artifacts:
+  - id: runtime-overheat-model-uv-lock
+    kind: runtime_dependency
+    status: qualified
+    identity:
+      name: overheat-model S11 runtime (python 3.12; mlflow 3.16.1, scikit-learn 1.9.1, pandas 3.0.6, pyarrow 25.0.1)
+      version: "mlflow==3.16.1 scikit-learn==1.9.1 pandas==3.0.6 pyarrow==25.0.1"
+      lock_hash: sha256:1b1d5a44f5d134d883c02c2d5b397127dfb3a58bad2b85eec67395dc30d8031e   # uv.lock
+    evidence:
+      - source_revision: oriolrius/overheat-model@e637cdb
+        artifact_revision: "uv.lock sha256:1b1d5a44f5d134d883c02c2d5b397127dfb3a58bad2b85eec67395dc30d8031e"
+        scenario: "fresh ec2-console operations VM (t3.large, Ubuntu 24.04.5, k3s up): uv sync --locked; loopback server sqlite:///mlflow.db + ./mlartifacts; tracking diagnosis (unset/file/wrong port/ok); guarded vs raw run with the URI unset; stop/restart; laptop SSH tunnel UI; tampered lock"
+        command_or_interaction: "uv sync --locked; uv run mlflow server --host 127.0.0.1 --port 5000 --backend-store-uri sqlite:///mlflow.db --artifacts-destination ./mlartifacts; uv run python src/check_tracking.py; ssh -N -L 5000:127.0.0.1:5000"
+        observed_result: "sync 3.6 s; versions as pinned; listener 127.0.0.1:5000 only (private IP + public IP refused); diagnosis exit 2/2/2/0; server run + artifact in mlartifacts/; raw unset-URI run went to /tmp/elsewhere (server count unchanged); run survived restart; tunnel UI MLflow 3.16.1; k8s objects 22/22; tampered lock exit 2"
+        time_utc: "2026-09-25T14:54:00Z"
+        limitation: "amd64 only; S10 monitoring stack not installed on this VM (coexistence is ML-07)"

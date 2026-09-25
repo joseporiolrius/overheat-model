@@ -25,7 +25,7 @@ uv sync --locked          # exact versions from uv.lock; fails instead of silent
 ```
 
 The qualified runtime is Python 3.12, `mlflow==3.16.1`, `scikit-learn==1.9.1`, `pandas==3.0.6`,
-`pyarrow==25.0.1`. See `pyproject.toml`, `uv.lock` and `course-artifacts.yaml`. Always use `uv`, never
+`pyarrow==25.0.1`. See `pyproject.toml`, `uv.lock` and `course-artifacts.yaml` (lock sha256 `1b1d5a44…`). Always use `uv`, never
 `pip install`.
 
 ## 2. Start the tracking server (loopback only)
@@ -51,7 +51,10 @@ uv run mlflow server --host 127.0.0.1 --port 5000 \
 ssh -N -L 5000:127.0.0.1:5000 ubuntu@<YOUR_VM_IP>      # add -i <your key> if you use one
 ```
 
-Browse **http://localhost:5000** on your laptop. The first time, it shows no experiments. On Windows,
+Browse **http://localhost:5000** on your laptop. The first time, it shows no experiments. MLflow 3.16
+opens in its **GenAI** view. Click **Model training** (top left) for runs, comparisons and models.
+Leave the **MLflow Assistant** panel unconfigured: this course sends AI traffic only through the
+course gateway. On Windows,
 PowerShell's built-in OpenSSH or VS Code's port-forward panel work too.
 
 ## 4. Point every client shell at the server
