@@ -170,7 +170,36 @@ git switch main
 The reproduced run has the same accuracy and F1. If `git_dirty` is `True`, the run used uncommitted code
 and cannot be reproduced exactly. Commit before you train.
 
-## 7. Stop, restart, and the VM lifecycle
+## 7. Register the chosen model
+
+```bash
+# [client]
+uv run python src/register.py --run-id <BEST_RUN_ID> --name overheat-classifier
+# registered overheat-classifier version 1 <- run <BEST_RUN_ID> (baseline-c1), model m-…, accuracy 0.9502
+```
+
+- **Naming.** Always register under **`overheat-classifier`**. Each registration adds the next
+  version (1, 2, 3, …). Earlier versions and their links are kept.
+- **Which run.** Use the run ID printed by `train.py`, or copy it from the run page. From the UI you
+  can also open the run, then **Register model**.
+- **What gets registered.** The script registers the run's logged `model`, then checks that the new
+  version really points back to that run.
+- **Lookup.**
+  - UI: **Model training → Registered Models → overheat-classifier → Version N**, where
+    **Source Run** links back to the training run.
+  - API: `client.get_model_version("overheat-classifier", "N").run_id`.
+- **Evidence.** A screenshot of the Version 1 page showing its Source Run →
+  `evidence/registered-v1.png`.
+- **The lab sequence.**
+  - version 1 = your best run (e.g. `baseline-c1`);
+  - version 2 = the deliberately bad `--features temp_a,temp_b` run;
+  - homework: version 3 = your best `class_weight` run, registered with the same command.
+- **Failures register nothing.**
+  - A run ID that does not exist → `ERROR: run … does not exist …; nothing registered`, exit 1.
+  - A run without a logged model → `… has no logged model 'model'; nothing registered`, exit 1.
+  - No tracking server → exit 2 (§4).
+
+## 8. Stop, restart, and the VM lifecycle
 
 - **Stop the server:** `Ctrl-C` in the [server] session. The data in `mlflow.db` and `mlartifacts/`
   stays on disk.
@@ -181,7 +210,7 @@ and cannot be reproduced exactly. Commit before you train.
   and §3.
 - Nothing here creates a Kubernetes object, a CI workflow or an AWS resource.
 
-## 8. Fallback when your uv environment is broken
+## 9. Fallback when your uv environment is broken
 
 A digest-pinned, course-mirrored MLflow image is published later in S11 preparation (ML-06). Use
 it only from this repo root, and only if it is recorded in `course-artifacts.yaml`.
@@ -193,6 +222,7 @@ overheat-model/
 ├── pyproject.toml / uv.lock / .python-version   # the locked runtime
 ├── src/generate_data.py                            # seeded dataset -> data/readings.parquet
 ├── src/train.py                                    # one tracked training run
+├── src/register.py                                 # run -> registered model version
 ├── src/tracking.py, src/check_tracking.py         # tracking-server guard + diagnosis
 ├── evidence/.gitkeep                               # your screenshots
 ├── JOURNAL.md                                      # your journal
