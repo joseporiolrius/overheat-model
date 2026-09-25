@@ -81,7 +81,40 @@ A stray `mlruns/` or `mlflow.db` in some other directory is the evidence of a ru
 local store. It did **not** reach your server. Do not copy it over; re-run with the URI set.
 Also watch for AI-written code that hard-codes `mlflow.set_tracking_uri(...)` to another place.
 
-## 5. Stop, restart, and the VM lifecycle
+## 5. The dataset: `data/readings.parquet`
+
+```bash
+# [client]
+uv run python src/generate_data.py --machines 5 --rows 216000 --out data/readings.parquet
+# wrote data/readings.parquet: 216000 rows, 5 machines, seed 42, overheat 27.0%
+# dataset_identity sha256:ee5aa2976f864c38d5e9327c0c4ab59e713bf1000669f2eb71ec54740e1884af
+```
+
+- **What it simulates.** 5 machines, one reading per minute for 30 days. Each machine switches between
+  idle, normal and heavy load. Its core temperature follows the load within minutes, but no sensor
+  measures the core.
+- **Columns.**
+  - `timestamp`, `machine_id`;
+  - `temp_a`: casing sensor, which lags the core by about an hour;
+  - `temp_b`: room sensor;
+  - `temp_diff`: the engineered feature, `temp_a` now minus `temp_a` 10 minutes earlier on the same
+    machine (the heating trend);
+  - `overheat`: 1 when the core is above **80 °C**, about 27% of readings.
+- **Why `temp_diff` matters.** While the core heats up, the casing still reads cool. Right after a
+  heavy phase, the casing is still warm but the core has cooled. Only the trend shows which way the core
+  is going. That is why a model trained on `temp_a,temp_b` alone falls well below the gate.
+- **Parameters.** `--machines` (default 5), `--rows` (216000, a multiple of `--machines`), `--seed`
+  (default **42**, recorded), `--out` (a `.parquet` path).
+- **Invalid values fail loudly.** A bad argument or an unwritable path exits 2 with a message, and
+  never leaves an empty or half-written file behind.
+- **Identity.** `dataset_identity` is the sha256 of the logical content. It is printed and stored with
+  the seed and parameters in the parquet metadata. The same seed and parameters always give the same
+  identity, so the training runs can record exactly which data they used. A different seed gives a
+  different identity.
+- **Regenerate instead of committing.** `data/` is git-ignored. The dataset is re-created in seconds
+  from the command above and never goes into your commits or `evidence/`.
+
+## 6. Stop, restart, and the VM lifecycle
 
 - **Stop the server:** `Ctrl-C` in the [server] session. The data in `mlflow.db` and `mlartifacts/`
   stays on disk.
@@ -92,7 +125,7 @@ Also watch for AI-written code that hard-codes `mlflow.set_tracking_uri(...)` to
   and §3.
 - Nothing here creates a Kubernetes object, a CI workflow or an AWS resource.
 
-## 6. Fallback when your uv environment is broken
+## 7. Fallback when your uv environment is broken
 
 A digest-pinned, course-mirrored MLflow image is published later in S11 preparation (ML-06). Use
 it only from this repo root, and only if it is recorded in `course-artifacts.yaml`.
@@ -102,6 +135,7 @@ it only from this repo root, and only if it is recorded in `course-artifacts.yam
 ```
 overheat-model/
 ├── pyproject.toml / uv.lock / .python-version   # the locked runtime
+├── src/generate_data.py                            # seeded dataset -> data/readings.parquet
 ├── src/tracking.py, src/check_tracking.py         # tracking-server guard + diagnosis
 ├── evidence/.gitkeep                               # your screenshots
 ├── JOURNAL.md                                      # your journal
