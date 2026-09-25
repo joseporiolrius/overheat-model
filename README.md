@@ -329,6 +329,7 @@ overheat-model/
 ├── scripts/mlflow-fallback.sh                      # container fallback server (§10)
 ├── src/tracking.py, src/check_tracking.py         # tracking-server guard + diagnosis
 ├── docs/TRACKED_RUN.md                              # the two-page pre-class handout
+├── docs/STARTER-S11.md                             # starter ref, provided vs authored, template-copy steps
 ├── evidence/.gitkeep                               # your screenshots
 ├── JOURNAL.md                                      # your journal
 └── .gitignore      # mlflow.db, mlartifacts/, mlruns/, data/ stay on the VM
