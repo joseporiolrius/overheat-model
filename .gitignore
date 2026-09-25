@@ -1,0 +1,12 @@
+# MLflow server state and artifacts stay on the VM — never committed (doc-13 / decision-12)
+mlflow.db
+mlflow.db-*
+mlartifacts/
+mlruns/
+# generated dataset (re-create with src/generate_data.py)
+data/
+# uv / Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
