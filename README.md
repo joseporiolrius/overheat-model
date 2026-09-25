@@ -248,8 +248,33 @@ echo $?    # 1   REJECTED: overheat-classifier v2 accuracy 0.7715 < 0.85 (run c1
 
 ## 10. Fallback when your uv environment is broken
 
-A digest-pinned, course-mirrored MLflow image is published later in S11 preparation (ML-06). Use
-it only from this repo root, and only if it is recorded in `course-artifacts.yaml`.
+Use this only when `uv sync --locked` or `uv run mlflow server` does not work on your VM. It runs
+the course-mirrored, digest-pinned image `ghcr.io/oriolrius/mlflow:v3.16.1@sha256:06058cc8…`: the
+same MLflow 3.16.1, amd64/arm64, recorded in `course-artifacts.yaml`. It uses the **same**
+`mlflow.db`, `mlartifacts/`, port and tunnel. You don't need a new repository and you lose no data.
+
+1. **Enter.** Stop the uv server first (`Ctrl-C` in its [server] session). Then:
+
+   ```bash
+   # [server]
+   cd ~/overheat-model
+   ./scripts/mlflow-fallback.sh
+   ```
+
+   The script refuses to start (exit 2) while anything listens on 127.0.0.1:5000, because two
+   servers must never write the same `mlflow.db`. It also refuses outside this repository and without
+   Docker. If the image cannot be pulled, it says `FALLBACK FAILED: cannot pull …` (exit 1).
+   Otherwise it runs `docker run -p 127.0.0.1:5000:5000 --user $(id -u):$(id -g) -v $PWD:/work …
+   mlflow server --host 0.0.0.0 --backend-store-uri sqlite:///mlflow.db --artifacts-destination ./mlartifacts`.
+   Inside the container it listens on all interfaces, but Docker publishes it **only on the VM's
+   127.0.0.1**, and the files it writes stay owned by you.
+2. **Verify.** Run `curl -s http://127.0.0.1:5000/health` (`OK`), then
+   `uv run python src/check_tracking.py` if your client env still works. The unchanged [laptop]
+   tunnel shows your existing runs and model versions.
+3. **Shut down.** `Ctrl-C` in the [server] session (or `docker stop overheat-mlflow-fallback`).
+   `mlflow.db` and `mlartifacts/` stay on disk.
+4. **Return to the normal path.** Once `uv sync --locked` works again, start the §2 command. Runs and
+   versions created during the fallback are still there.
 
 ## Repository layout and what is committed
 
@@ -260,6 +285,7 @@ overheat-model/
 ├── src/train.py                                    # one tracked training run
 ├── src/register.py                                 # run -> registered model version
 ├── src/quality_gate.py                             # accuracy gate, exit 0/1 (2 = cannot evaluate)
+├── scripts/mlflow-fallback.sh                      # container fallback server (§10)
 ├── src/tracking.py, src/check_tracking.py         # tracking-server guard + diagnosis
 ├── evidence/.gitkeep                               # your screenshots
 ├── JOURNAL.md                                      # your journal

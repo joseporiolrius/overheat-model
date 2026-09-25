@@ -19,3 +19,22 @@ artifacts:
         observed_result: "sync 3.6 s; versions as pinned; listener 127.0.0.1:5000 only (private IP + public IP refused); diagnosis exit 2/2/2/0; server run + artifact in mlartifacts/; raw unset-URI run went to /tmp/elsewhere (server count unchanged); run survived restart; tunnel UI MLflow 3.16.1; k8s objects 22/22; tampered lock exit 2"
         time_utc: "2026-09-25T14:54:00Z"
         limitation: "amd64 only; S10 monitoring stack not installed on this VM (coexistence is ML-07)"
+  - id: image-mlflow-fallback
+    kind: image
+    status: qualified
+    identity:
+      source_repo: mlflow/mlflow
+      source_sha: 32792afe5b0183fce10532d3a023f5cfa8612d09   # mlflow/mlflow tag v3.16.1
+      image_ref: ghcr.io/oriolrius/mlflow:v3.16.1
+      digest: sha256:06058cc872276873e9759c635e773342aca4731e240f6d20d88ea43774083984
+      upstream_ref: ghcr.io/mlflow/mlflow:v3.16.1@sha256:06058cc872276873e9759c635e773342aca4731e240f6d20d88ea43774083984
+      runtime_version: mlflow 3.16.1
+      platforms: [linux/amd64, linux/arm64]
+    evidence:
+      - source_revision: oriolrius/overheat-model@348ba71 scripts/mlflow-fallback.sh
+        artifact_revision: "sha256:06058cc872276873e9759c635e773342aca4731e240f6d20d88ea43774083984"
+        scenario: "mirror made with docker buildx imagetools create (digest = upstream), package public; operations VM without registry login pulls by digest; fallback serves the uv-created lab mlflow.db + mlartifacts on 127.0.0.1:5000 only; gate/train/model load through it; refusals: uv server running, wrong digest; second server blocked; return to uv keeps data"
+        command_or_interaction: "./scripts/mlflow-fallback.sh; uv run python src/quality_gate.py --version 1|2; uv run python src/train.py --run-name via-fallback; docker stop; uv run mlflow server …"
+        observed_result: "anonymous pull 20 s (amd64, 290 MB); mlflow 3.16.1; health OK 19 s; listener 127.0.0.1:5000 only (private IP refused); runs 12 + versions [1,2,3] visible; gate v1 exit 0, v2 exit 1; new run logged; files owned by ubuntu; concurrent start refused (exit 2) / wrong digest exit 1; uv server back with 13 runs"
+        time_utc: "2026-09-25T15:21:00Z"
+        limitation: "amd64 exercised (arm64 in the index, not run)"
