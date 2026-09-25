@@ -41,11 +41,12 @@ def main(argv=None) -> int:
         print(f"CANNOT EVALUATE: run {run.info.run_id} of {args.name} v{args.version} has no 'accuracy' metric",
               file=sys.stderr)
         return 2
+    shown = f"{acc:.4f}" if abs(acc - args.min_accuracy) >= 1e-4 else repr(acc)   # full precision at the edge
     if acc < args.min_accuracy:
-        print(f"REJECTED: {args.name} v{args.version} accuracy {acc:.4f} < {args.min_accuracy} "
+        print(f"REJECTED: {args.name} v{args.version} accuracy {shown} < {args.min_accuracy} "
               f"(run {run.info.run_name})")
         return 1
-    print(f"PASSED: {args.name} v{args.version} accuracy {acc:.4f} >= {args.min_accuracy} (run {run.info.run_name})")
+    print(f"PASSED: {args.name} v{args.version} accuracy {shown} >= {args.min_accuracy} (run {run.info.run_name})")
     return 0
 
 

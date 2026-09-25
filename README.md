@@ -199,7 +199,43 @@ uv run python src/register.py --run-id <BEST_RUN_ID> --name overheat-classifier
   - A run without a logged model → `… has no logged model 'model'; nothing registered`, exit 1.
   - No tracking server → exit 2 (§4).
 
-## 8. Stop, restart, and the VM lifecycle
+## 8. The quality gate
+
+```bash
+# [client]
+uv run python src/quality_gate.py --name overheat-classifier --version 1 --min-accuracy 0.85
+echo $?    # 0   PASSED: overheat-classifier v1 accuracy 0.9502 >= 0.85 (run baseline-c1)
+uv run python src/quality_gate.py --name overheat-classifier --version 2 --min-accuracy 0.85
+echo $?    # 1   REJECTED: overheat-classifier v2 accuracy 0.7715 < 0.85 (run c1-temp_a+temp_b-cwnone)
+```
+
+- **What it checks.** The gate reads `accuracy` from the run linked to **exactly** the version you name,
+  and prints the measured value and the threshold. Accuracy equal to the threshold passes. The core is
+  deliberately tiny, so read it in `src/quality_gate.py`.
+- **Exit codes are the interface.**
+  - `0` = PASSED.
+  - `1` = REJECTED.
+  - `2` = cannot evaluate: unknown model or version, a run without an `accuracy` metric, no tracking
+    server, or an invalid threshold. It is **never** reported as a pass.
+- **Who reads the exit code.** A CI step, such as a GitHub Actions `run:` line, fails on any non-zero
+  exit code, and every later step (promotion, deploy) is skipped. Deploys are blocked by the gate, not
+  debated in a meeting. In S12 the same pattern gates your RAG release on golden-set retrieval
+  (`hit@3 >= 0.8`) instead of accuracy.
+- **Evidence.** Screenshot the terminal showing `REJECTED … echo $? -> 1` for version 2 →
+  `evidence/gate-rejected.png`. Add `evidence/compare-runs.png` (the UI **Compare** view of your
+  runs) and `evidence/registered-v1.png` (§7), plus your `JOURNAL.md` entry. Then commit them:
+
+  ```bash
+  git add evidence/ JOURNAL.md && git commit -m "feat: tracked overheat experiments, registered v1, quality gate demo" && git push
+  ```
+
+  The registry (`mlflow.db`), model files (`mlartifacts/`) and dataset (`data/`) stay on the VM. They
+  are git-ignored and never pushed.
+- **Homework.** Gate your `class_weight` version 3 with the same command (expected exit 0). Then
+  reflect: overheating is about 27% of readings, so accuracy flatters a model that misses overheats.
+  `f1` is already logged. What F1 threshold would make a more honest gate?
+
+## 9. Stop, restart, and the VM lifecycle
 
 - **Stop the server:** `Ctrl-C` in the [server] session. The data in `mlflow.db` and `mlartifacts/`
   stays on disk.
@@ -210,7 +246,7 @@ uv run python src/register.py --run-id <BEST_RUN_ID> --name overheat-classifier
   and §3.
 - Nothing here creates a Kubernetes object, a CI workflow or an AWS resource.
 
-## 9. Fallback when your uv environment is broken
+## 10. Fallback when your uv environment is broken
 
 A digest-pinned, course-mirrored MLflow image is published later in S11 preparation (ML-06). Use
 it only from this repo root, and only if it is recorded in `course-artifacts.yaml`.
@@ -223,6 +259,7 @@ overheat-model/
 ├── src/generate_data.py                            # seeded dataset -> data/readings.parquet
 ├── src/train.py                                    # one tracked training run
 ├── src/register.py                                 # run -> registered model version
+├── src/quality_gate.py                             # accuracy gate, exit 0/1 (2 = cannot evaluate)
 ├── src/tracking.py, src/check_tracking.py         # tracking-server guard + diagnosis
 ├── evidence/.gitkeep                               # your screenshots
 ├── JOURNAL.md                                      # your journal
