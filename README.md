@@ -114,7 +114,63 @@ uv run python src/generate_data.py --machines 5 --rows 216000 --out data/reading
 - **Regenerate instead of committing.** `data/` is git-ignored. The dataset is re-created in seconds
   from the command above and never goes into your commits or `evidence/`.
 
-## 6. Stop, restart, and the VM lifecycle
+## 6. Train tracked runs
+
+```bash
+# [client]  (MLFLOW_TRACKING_URI exported, dataset generated)
+uv run python src/train.py --c 1.0 --run-name baseline-c1          # the baseline, by this exact name
+for c in 0.001 0.01 0.1 10 100; do uv run python src/train.py --c $c; done
+```
+
+`train.py` options:
+- `--c`: regularization, > 0;
+- `--features`: a comma list from `temp_a,temp_b,temp_diff` (default: all three);
+- `--class_weight`: `none` | `balanced` | the weight of the overheat class, e.g. `3`;
+- `--run-name`: default `c<c>-<features>-cw<class_weight>`;
+- `--seed`: the split seed, default 42.
+
+Each run goes to experiment **`overheat`** and records:
+- params: `c`, `features`, `class_weight`, `seed`, `dataset_identity`, `dataset_seed`, `git_commit`;
+- metrics: `accuracy`, `f1`, `precision`, `recall` on a held-out 20%;
+- the fitted model (artifact `model`);
+- the MLflow source-commit tag.
+
+It prints the run ID and the scores. It stops with a visible error and exit 2 when:
+- the tracking server is unreachable (§4);
+- the dataset is missing;
+- a feature name is unknown, e.g. `--features temp_a,core`.
+
+Reference scores on the qualified dataset (seed 42, measured on the course VM):
+
+| Run | accuracy | f1 |
+|---|---|---|
+| `baseline-c1` (all features) | about 0.950 | about 0.907 |
+| `--features temp_a,temp_b` (the bad model) | about 0.771 | about 0.459 |
+
+With this much data, `C` changes accuracy only in the third or fourth decimal. The sweep shows that
+the features, not the regularization, carry the model.
+
+**Homework: `class_weight` sweep.** For example
+`for w in none balanced 2 4; do uv run python src/train.py --class_weight $w; done`. Every run is tagged
+`baseline_run_id` = your `baseline-c1` run, so you compare against a fixed reference. Overheating is
+27% of readings, so compare **F1** as well as accuracy.
+
+### 6.1 Reproduce a selected run
+
+Open the run in the UI and read its params and the `mlflow.source.git.commit` tag. Then:
+
+```bash
+# [client]
+git switch --detach <git_commit>
+uv run python src/generate_data.py --seed <dataset_seed> --out data/readings.parquet   # prints dataset_identity: must equal the run's
+uv run python src/train.py --c <c> --features <features> --class_weight <class_weight> --seed <seed> --run-name repro-<name>
+git switch main
+```
+
+The reproduced run has the same accuracy and F1. If `git_dirty` is `True`, the run used uncommitted code
+and cannot be reproduced exactly. Commit before you train.
+
+## 7. Stop, restart, and the VM lifecycle
 
 - **Stop the server:** `Ctrl-C` in the [server] session. The data in `mlflow.db` and `mlartifacts/`
   stays on disk.
@@ -125,7 +181,7 @@ uv run python src/generate_data.py --machines 5 --rows 216000 --out data/reading
   and §3.
 - Nothing here creates a Kubernetes object, a CI workflow or an AWS resource.
 
-## 7. Fallback when your uv environment is broken
+## 8. Fallback when your uv environment is broken
 
 A digest-pinned, course-mirrored MLflow image is published later in S11 preparation (ML-06). Use
 it only from this repo root, and only if it is recorded in `course-artifacts.yaml`.
@@ -136,6 +192,7 @@ it only from this repo root, and only if it is recorded in `course-artifacts.yam
 overheat-model/
 ├── pyproject.toml / uv.lock / .python-version   # the locked runtime
 ├── src/generate_data.py                            # seeded dataset -> data/readings.parquet
+├── src/train.py                                    # one tracked training run
 ├── src/tracking.py, src/check_tracking.py         # tracking-server guard + diagnosis
 ├── evidence/.gitkeep                               # your screenshots
 ├── JOURNAL.md                                      # your journal
