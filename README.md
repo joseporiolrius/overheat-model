@@ -15,6 +15,16 @@ Every command below is labelled with where it runs:
 | **[client]** | SSH session 2 on the VM, in `~/overheat-model` (data, training, registry, gate) |
 | **[laptop]** | your laptop terminal (SSH tunnel and browser) |
 
+## 0. Before class: preflight (5 minutes)
+
+- Read [`docs/TRACKED_RUN.md`](docs/TRACKED_RUN.md), the two-page "what a tracked run records" handout.
+- On the VM: `df -h /` must show **at least 5 GB free** (Prometheus from S10 keeps writing to disk).
+  `free -m` should show about 3 GB available with your S10 stack running.
+- On your laptop: check that SSH port forwarding works (`ssh -L …`, §3). On Windows use PowerShell's
+  OpenSSH or the VS Code port-forward panel.
+- Keep your S9/S10 workbench and monitoring running. The lab was rehearsed next to them on a
+  t3.large, and they stay healthy (§11).
+
 ## 1. Get the code and the locked environment
 
 ```bash
@@ -50,6 +60,10 @@ uv run mlflow server --host 127.0.0.1 --port 5000 \
 # [laptop]
 ssh -N -L 5000:127.0.0.1:5000 ubuntu@<YOUR_VM_IP>      # add -i <your key> if you use one
 ```
+
+**Check that it is private.** On the VM, `ss -ltn | grep :5000` must show `127.0.0.1:5000` only (never
+`0.0.0.0:5000` or `*:5000`). From your laptop, `curl -m 5 http://<YOUR_VM_IP>:5000/health` must **fail**.
+The tunnel is the only way in.
 
 Browse **http://localhost:5000** on your laptop. The first time, it shows no experiments. MLflow 3.16
 opens in its **GenAI** view. Click **Model training** (top left) for runs, comparisons and models.
@@ -248,7 +262,7 @@ echo $?    # 1   REJECTED: overheat-classifier v2 accuracy 0.7715 < 0.85 (run c1
 
 ## 10. Fallback when your uv environment is broken
 
-Use this only when `uv sync --locked` or `uv run mlflow server` does not work on your VM. It runs
+Use this only when `uv sync --locked` or `uv run mlflow server` does not work on your VM. It is **qualified**: it was tested on the course VM against a real lab database, where it served the same runs and versions, gates and new runs, and files stayed owned by you. It runs
 the course-mirrored, digest-pinned image `ghcr.io/oriolrius/mlflow:v3.16.1@sha256:06058cc8…`: the
 same MLflow 3.16.1, amd64/arm64, recorded in `course-artifacts.yaml`. It uses the **same**
 `mlflow.db`, `mlartifacts/`, port and tunnel. You don't need a new repository and you lose no data.
@@ -276,6 +290,33 @@ same MLflow 3.16.1, amd64/arm64, recorded in `course-artifacts.yaml`. It uses th
 4. **Return to the normal path.** Once `uv sync --locked` works again, start the §2 command. Runs and
    versions created during the fallback are still there.
 
+## 11. Reference rehearsal (course VM, t3.large, S9/S10 stack running)
+
+Measured 2026-09-25 on an ec2-console operations VM (2 vCPU, 7.8 GB), with the workbench and S10
+monitoring running the whole time:
+
+| Step | Time |
+|---|---|
+| `uv sync --locked` (empty uv cache) | 4 s |
+| MLflow server start → healthy | about 37 s |
+| `generate_data.py` (216000 rows) | about 17 s |
+| one `train.py` run | 6–8.5 s |
+| `register.py` | about 3 s |
+
+- Available memory never went below 3.5 GB.
+- The workbench probe stayed up and `WorkbenchDown` never fired.
+- After a VM stop/start and a restart of the §2 server, all runs, versions and model files were
+  byte-identical.
+
+## Evidence checklist (commit these, nothing else)
+
+- [ ] `evidence/compare-runs.png`: UI **Compare** of your six `c` runs plus the bad run (parallel coordinates).
+- [ ] `evidence/registered-v1.png`: Version 1 page showing its **Source Run**.
+- [ ] `evidence/gate-rejected.png`: terminal with `REJECTED … < 0.85` and `echo $?` → `1` for version 2.
+- [ ] `JOURNAL.md`, 5–10 lines: what you asked an AI, what it got wrong, how you verified that the gate
+      really blocks. Include run IDs and versions, not only screenshots.
+- [ ] `git status` shows no `mlflow.db`, `mlartifacts/`, `mlruns/` or `data/`. They are ignored and stay on the VM.
+
 ## Repository layout and what is committed
 
 ```
@@ -287,6 +328,7 @@ overheat-model/
 ├── src/quality_gate.py                             # accuracy gate, exit 0/1 (2 = cannot evaluate)
 ├── scripts/mlflow-fallback.sh                      # container fallback server (§10)
 ├── src/tracking.py, src/check_tracking.py         # tracking-server guard + diagnosis
+├── docs/TRACKED_RUN.md                              # the two-page pre-class handout
 ├── evidence/.gitkeep                               # your screenshots
 ├── JOURNAL.md                                      # your journal
 └── .gitignore      # mlflow.db, mlartifacts/, mlruns/, data/ stay on the VM

@@ -19,6 +19,13 @@ artifacts:
         observed_result: "sync 3.6 s; versions as pinned; listener 127.0.0.1:5000 only (private IP + public IP refused); diagnosis exit 2/2/2/0; server run + artifact in mlartifacts/; raw unset-URI run went to /tmp/elsewhere (server count unchanged); run survived restart; tunnel UI MLflow 3.16.1; k8s objects 22/22; tampered lock exit 2"
         time_utc: "2026-09-25T14:54:00Z"
         limitation: "amd64 only; S10 monitoring stack not installed on this VM (coexistence is ML-07)"
+      - source_revision: oriolrius/overheat-model@a1bdcdc
+        artifact_revision: "uv.lock sha256:1b1d5a44f5d134d883c02c2d5b397127dfb3a58bad2b85eec67395dc30d8031e"
+        scenario: "ML-07 component rehearsal on the operations VM with the S9 workbench (chart 0.2.1) and S10 monitoring running: cold uv sync, 6 c runs + bad run + class_weight sweep, register v1/v2/v3, gates; 5 s health sampler; controller stop/start + documented server restart"
+        command_or_interaction: "evidence/ml-07/rehearse-vm.sh + fingerprint.sh (esade-devops); console.sh stop/start ml01"
+        observed_result: "uv sync 4.0 s; server 36.6 s; data 17.4 s; runs 6.1-8.5 s; register ~3 s; gates v1 0 / v2 1 / v3 0; pods 7/7, probe_success 1 in 24/24 samples, WorkbenchDown never firing, min available memory 3541 MiB of 7816; after stop/start: runs/versions/70 artifact files/mlflow.db identical, v1 loads and passes"
+        time_utc: "2026-09-25T15:35:00Z"
+        limitation: "one VM, amd64; the S10 probe needed port 80 from the VM's own EIP (hairpin) — see ML-07 notes"
   - id: image-mlflow-fallback
     kind: image
     status: qualified
