@@ -95,8 +95,16 @@ def main(argv=None) -> int:
     meta = json.loads((pq.read_schema(data).metadata or {}).get(b"overheat_dataset", b"{}"))
     df = pd.read_parquet(data)
 
+    import logging
+    import warnings
+
     import mlflow
     import mlflow.sklearn
+
+    # Two harmless MLflow notices would print on every run and hide the result line:
+    # uv environments ship without pip, and the prediction output is an integer class.
+    logging.getLogger("mlflow.utils.environment").setLevel(logging.ERROR)
+    warnings.filterwarnings("ignore", message=".*Inferred schema contains integer column.*")
     from sklearn.linear_model import LogisticRegression
     from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
     from sklearn.model_selection import train_test_split
