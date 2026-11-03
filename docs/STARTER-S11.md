@@ -1,20 +1,24 @@
-# S11 starter — `starter-s11-v1.0.0`
+# S11 starter — `starter-s11-v1.0.1`
 
-**Ref:** `starter-s11-v1.0.0` (annotated tag, initial scaffold of the course template
-`oriolrius/overheat-model`). Immutable: fixes ship as a new tag (`starter-s11-v1.0.1`, …), never by
-moving this one.
+**Ref:** `starter-s11-v1.0.1` (annotated tag on the course template `joseporiolrius/overheat-model`).
+It is a documentation-only PATCH of `starter-s11-v1.0.0` (`0fa820a`, the initial scaffold): the
+README, this file and `docs/TRACKED_RUN.md` match the S11 deck and lab video; no runtime file
+changed (`uv.lock`, `src/`, `scripts/` are identical). Tags are immutable: fixes ship as a new tag,
+never by moving an existing one.
 
 ## How students get it (no upstream import)
 
 `overheat-model` is a **standalone** third repository, not an increment of `ai-workbench` or
 `hello-world`:
 
-1. On GitHub, open `oriolrius/overheat-model` → **Use this template** → **Create a new repository**.
-   Name it `overheat-model`, visibility **Private**. The copy starts with its own single root
-   commit.
-2. **Settings → Collaborators**: add the professor (`oriolrius`) with **Read** access.
-3. On your existing S8–S10 VM: `git clone git@github.com:<you>/overheat-model.git ~/overheat-model`,
-   then follow `README.md` from §0.
+1. On GitHub, open `joseporiolrius/overheat-model` → **Use this template** → **Create a new
+   repository**. Name it `overheat-model`, visibility **Private**. The copy starts with its own
+   single root commit.
+2. **Settings → Collaborators**: add the professor's course account `joseporiolrius`.
+3. On your existing S8–S10 VM, with the SSH key you set up in Session 2:
+   `git clone git@github.com:<you>/overheat-model.git ~/overheat-model`, then follow `README.md`
+   from §0. (The course lab video clones on a laptop and copies with `scp -r` only because its
+   recording VM holds no GitHub credential.)
 
 There is no `upstream` remote and no merge ceremony. Your `ai-workbench` and `hello-world`
 repositories are not touched by S11.

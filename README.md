@@ -11,9 +11,9 @@ Every command below is labelled with where it runs:
 
 | Label | Where |
 |---|---|
-| **[server]** | SSH session 1 on the VM, in `~/overheat-model` (MLflow server, foreground) |
-| **[client]** | SSH session 2 on the VM, in `~/overheat-model` (data, training, registry, gate) |
-| **[laptop]** | your laptop terminal (SSH tunnel and browser) |
+| **[server]** | SSH session 1 on the VM, in `~/overheat-model` (setup, then the MLflow server in the foreground) |
+| **[client]** | SSH session 2, opened from your laptop with `ssh -L …` (§3): it is your tunnel **and** your client shell on the VM, in `~/overheat-model` (data, training, registry, gate, commits) |
+| **[laptop]** | your laptop terminal (opens session 2; browser; screenshots) |
 
 ## 0. Before class: preflight (5 minutes)
 
@@ -27,12 +27,21 @@ Every command below is labelled with where it runs:
 
 ## 1. Get the code and the locked environment
 
+Create your private copy first (`docs/STARTER-S11.md`): the course template
+`joseporiolrius/overheat-model` → **Use this template** → Private; then add the professor's course
+account `joseporiolrius` as collaborator. Then clone it **on the VM**, with the SSH key you set up in
+Session 2:
+
 ```bash
-# [client]
+# [server]
 git clone git@github.com:<you>/overheat-model.git ~/overheat-model
 cd ~/overheat-model
-uv sync --locked          # exact versions from uv.lock; fails instead of silently upgrading
+uv sync --locked
 ```
+
+`uv sync --locked` installs the exact versions from `uv.lock` and fails instead of silently
+upgrading. (The course lab video clones on a laptop and copies the folder with `scp -r` only because
+its recording VM holds no GitHub credential; your path is the clone on the VM.)
 
 The qualified runtime is Python 3.12, `mlflow==3.16.1`, `scikit-learn==1.9.1`, `pandas==3.0.6`,
 `pyarrow==25.0.1`. See `pyproject.toml`, `uv.lock` and `course-artifacts.yaml` (lock sha256 `1b1d5a44…`). Always use `uv`, never
@@ -43,30 +52,47 @@ The qualified runtime is Python 3.12, `mlflow==3.16.1`, `scikit-learn==1.9.1`, `
 ```bash
 # [server]
 cd ~/overheat-model
-uv run mlflow server --host 127.0.0.1 --port 5000 \
-  --backend-store-uri sqlite:///mlflow.db --artifacts-destination ./mlartifacts
+uv run mlflow server --host 127.0.0.1 --port 5000 --backend-store-uri sqlite:///mlflow.db --artifacts-destination ./mlartifacts
 ```
+
+One command, typed on one line. After about 37 s two lines tell you it is up and private:
+`[MLflow] Security middleware enabled with default settings (localhost-only)…` and
+`Uvicorn running on http://127.0.0.1:5000`.
 
 - **127.0.0.1, never 0.0.0.0.** The VM is on the public internet and MLflow has no authentication,
   so the server is reachable only from the VM itself (and through your tunnel).
 - `mlflow.db` holds the runs, params, metrics and registry. `mlartifacts/` holds the model files.
   Both are git-ignored and stay on the VM's disk.
-- Leave it running in the foreground. Check it from the client session with
+- Leave it running in the foreground. Check it from the client session (§3) with
   `curl -s http://127.0.0.1:5000/health` (prints `OK`).
 
-## 3. Open the UI through an SSH tunnel
+## 3. Session 2: the tunnel and your client shell
+
+Open SSH session 2 from your laptop with a port forward. Keep this window open: it is the tunnel,
+and the shell where you run every [client] command. Close it and the tunnel closes with it.
 
 ```bash
 # [laptop]
-ssh -N -L 5000:127.0.0.1:5000 ubuntu@<YOUR_VM_IP>      # add -i <your key> if you use one
+ssh -L 5000:127.0.0.1:5000 ubuntu@<YOUR_VM_IP>
+```
+
+Add `-i <your key>` if you use one. Do not use `-f`: it does not detach reliably on Windows
+OpenSSH. Then, in that session:
+
+```bash
+# [client]
+cd ~/overheat-model
+curl -s http://127.0.0.1:5000/health
+ss -ltn | grep :5000
 ```
 
 **Check that it is private.** On the VM, `ss -ltn | grep :5000` must show `127.0.0.1:5000` only (never
 `0.0.0.0:5000` or `*:5000`). From your laptop, `curl -m 5 http://<YOUR_VM_IP>:5000/health` must **fail**.
 The tunnel is the only way in.
 
-Browse **http://localhost:5000** on your laptop. The first time, it shows no experiments. MLflow 3.16
-opens in its **GenAI** view. Click **Model training** (top left) for runs, comparisons and models.
+Browse **http://localhost:5000** on your laptop. MLflow 3.16 opens on its **GenAI** page. Click
+**Model training** (top left) for runs, comparisons and models; the first time there is one empty
+experiment, `Default`, that MLflow creates itself.
 Leave the **MLflow Assistant** panel unconfigured: this course sends AI traffic only through the
 course gateway. On Windows,
 PowerShell's built-in OpenSSH or VS Code's port-forward panel work too.
@@ -75,15 +101,20 @@ PowerShell's built-in OpenSSH or VS Code's port-forward panel work too.
 
 ```bash
 # [client]
+echo $MLFLOW_TRACKING_URI
 export MLFLOW_TRACKING_URI=http://127.0.0.1:5000
-uv run python src/check_tracking.py     # OK: ... server healthy (exit 0)
+echo $MLFLOW_TRACKING_URI
 ```
 
-Every lab script checks this first and **refuses to log** (exit 2) unless a server answers.
+Every lab script checks this first and **refuses to log** (`TRACKING NOT CONFIGURED`, exit 2)
+unless a server answers. The export lives in this shell only: every new shell needs it again.
 
 ### Diagnosing "my runs are not in the UI"
 
-Ask: *where does my client think the tracking server is?* Run `uv run python src/check_tracking.py`:
+Ask: *where does my client think the tracking server is?* Two plain commands answer it:
+`echo $MLFLOW_TRACKING_URI` (must print `http://127.0.0.1:5000`) and
+`curl -s http://127.0.0.1:5000/health` (must print `OK`). For a one-line diagnosis, run
+`uv run python src/check_tracking.py`:
 
 | It prints | What happened | Fix |
 |---|---|---|
@@ -132,9 +163,17 @@ uv run python src/generate_data.py --machines 5 --rows 216000 --out data/reading
 
 ```bash
 # [client]  (MLFLOW_TRACKING_URI exported, dataset generated)
-uv run python src/train.py --c 1.0 --run-name baseline-c1          # the baseline, by this exact name
-for c in 0.001 0.01 0.1 10 100; do uv run python src/train.py --c $c; done
+uv run python src/train.py --c 1.0 --run-name baseline-c1
+uv run python src/train.py --c 0.001
+uv run python src/train.py --c 0.01
+uv run python src/train.py --c 0.1
+uv run python src/train.py --c 10
+uv run python src/train.py --c 100
 ```
+
+The first run is the baseline, by this exact name. An assistant will offer you a loop
+(`for c in 0.001 0.01 0.1 10 100; do …; done`): it is the same five commands. Each run prints its
+result on its last line; the `INFO` and "View run" lines above it are MLflow's own notices.
 
 `train.py` options:
 - `--c`: regularization, > 0;
@@ -146,7 +185,8 @@ for c in 0.001 0.01 0.1 10 100; do uv run python src/train.py --c $c; done
 Each run goes to experiment **`overheat`** and records:
 - params: `c`, `features`, `class_weight`, `seed`, `dataset_identity`, `dataset_seed`, `git_commit`;
 - metrics: `accuracy`, `f1`, `precision`, `recall` on a held-out 20%;
-- the fitted model (artifact `model`);
+- the fitted model (artifact `model`; the run page shows it in the **Logged models** row: the model
+  the run saved);
 - the MLflow source-commit tag.
 
 It prints the run ID and the scores. It stops with a visible error and exit 2 when:
@@ -186,11 +226,20 @@ and cannot be reproduced exactly. Commit before you train.
 
 ## 7. Register the chosen model
 
+**Version 1, from the UI.** Model training → Experiments → `overheat` → `baseline-c1` →
+**Register model** → create `overheat-classifier`. Then Registered Models → `overheat-classifier` →
+Version 1 → **Source run** opens `baseline-c1` again. Screenshot → `evidence/registered-v1.png`.
+
+**The same action from a script** (used for version 2):
+
 ```bash
 # [client]
-uv run python src/register.py --run-id <BEST_RUN_ID> --name overheat-classifier
-# registered overheat-classifier version 1 <- run <BEST_RUN_ID> (baseline-c1), model m-…, accuracy 0.9502
+uv run python src/register.py --run-id <RUN_ID> --name overheat-classifier
 ```
+
+It prints `registered overheat-classifier version N <- run <RUN_ID> (<run name>), model m-…, accuracy …`.
+The "Waiting up to 300 seconds" INFO line is MLflow waiting until the new version is marked ready;
+nothing is copied.
 
 - **Naming.** Always register under **`overheat-classifier`**. Each registration adds the next
   version (1, 2, 3, …). Earlier versions and their links are kept.
@@ -204,8 +253,10 @@ uv run python src/register.py --run-id <BEST_RUN_ID> --name overheat-classifier
   - API: `client.get_model_version("overheat-classifier", "N").run_id`.
 - **Evidence.** A screenshot of the Version 1 page showing its Source Run →
   `evidence/registered-v1.png`.
+- **Promote.** After version 1 passes the gate (§8): Version 1 → Aliases → **Add** → `champion`. An
+  alias is the pointer a deploy reads; it moves only after the gate said yes.
 - **The lab sequence.**
-  - version 1 = your best run (e.g. `baseline-c1`);
+  - version 1 = `baseline-c1` (the sweep is flat, so the named baseline wins by convention);
   - version 2 = the deliberately bad `--features temp_a,temp_b` run;
   - homework: version 3 = your best `class_weight` run, registered with the same command.
 - **Failures register nothing.**
@@ -235,12 +286,21 @@ echo $?    # 1   REJECTED: overheat-classifier v2 accuracy 0.7715 < 0.85 (run c1
   exit code, and every later step (promotion, deploy) is skipped. Deploys are blocked by the gate, not
   debated in a meeting. In S12 the same pattern gates your RAG release on golden-set retrieval
   (`hit@3 >= 0.8`) instead of accuracy.
+- **A gate that cannot fail is not a gate.** The same version 2 with `--min-accuracy 0.5` passes
+  (exit 0): the threshold is policy and lives in the pipeline file, not in someone's shell. An
+  unknown version (`--version 9`) prints `CANNOT EVALUATE` and exits 2.
 - **Evidence.** Screenshot the terminal showing `REJECTED … echo $? -> 1` for version 2 →
-  `evidence/gate-rejected.png`. Add `evidence/compare-runs.png` (the UI **Compare** view of your
-  runs) and `evidence/registered-v1.png` (§7), plus your `JOURNAL.md` entry. Then commit them:
+  `evidence/gate-rejected.png`. Then Compare all seven runs (six `c` runs plus the bad run) →
+  `evidence/compare-runs.png`. With `evidence/registered-v1.png` (§7) and your `JOURNAL.md` entry,
+  commit them in the [client] session. Screenshots taken on the laptop reach the VM first, e.g.
+  `scp compare-runs.png registered-v1.png gate-rejected.png ubuntu@<YOUR_VM_IP>:~/overheat-model/evidence/`
+  from the laptop folder that holds them. Then:
 
   ```bash
-  git add evidence/ JOURNAL.md && git commit -m "feat: tracked overheat experiments, registered v1, quality gate demo" && git push
+  # [client]
+  git add evidence/ JOURNAL.md
+  git commit -m "feat: tracked overheat experiments, registered v1, quality gate demo"
+  git push
   ```
 
   The registry (`mlflow.db`), model files (`mlartifacts/`) and dataset (`data/`) stay on the VM. They
@@ -254,7 +314,7 @@ echo $?    # 1   REJECTED: overheat-classifier v2 accuracy 0.7715 < 0.85 (run c1
 - **Stop the server:** `Ctrl-C` in the [server] session. The data in `mlflow.db` and `mlartifacts/`
   stays on disk.
 - **Restart:** run the §2 command again from `~/overheat-model`. All runs and model versions come
-  back, because they live in those two paths. Then re-open the [laptop] tunnel.
+  back, because they live in those two paths. Then re-open session 2 with the tunnel (§3).
 - **Stop the VM when you are not working,** between S11 and S12 too. Stopping the VM keeps its
   disk (and your MLflow data). The server does not auto-start: after the VM starts, repeat §2
   and §3.

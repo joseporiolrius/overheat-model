@@ -58,8 +58,9 @@ All three stay on your VM and are git-ignored. Git gets code, `evidence/` screen
 - The **client** (`train.py`, `register.py`, `quality_gate.py`) sends everything to
   `MLFLOW_TRACKING_URI=http://127.0.0.1:5000`. If that is unset, MLflow silently writes to a local
   file store instead, and your runs are not in the UI. The lab scripts refuse to run in that case.
-- Your **laptop** reaches the UI through `ssh -L 5000:127.0.0.1:5000 …`, so http://localhost:5000
-  never touches the public internet.
+- Your **laptop** reaches the UI through SSH session 2, opened with `ssh -L 5000:127.0.0.1:5000 …`:
+  that session is both the tunnel and the client shell, so http://localhost:5000 never touches the
+  public internet.
 
 ## 6. From run to gate
 
