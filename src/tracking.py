@@ -1,4 +1,4 @@
-"""Where does this client send runs? Shared guard for every lab script (S11).
+"""Where does this client send runs? Shared guard for every lab script (S10).
 
 The course tracking server runs on the VM at http://127.0.0.1:5000 (loopback only).
 When MLFLOW_TRACKING_URI is unset, MLflow 3 silently falls back to a LOCAL store,

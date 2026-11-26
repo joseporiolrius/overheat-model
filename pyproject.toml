@@ -1,10 +1,10 @@
 [project]
 name = "overheat-model"
 version = "0.1.0"
-description = "DBAI S11 lab: track, register and gate the predictive-maintenance overheat classifier with MLflow"
+description = "DBAI S10 lab: track, register and gate the predictive-maintenance overheat classifier with MLflow"
 readme = "README.md"
 requires-python = "==3.12.*"
-# Exact pins = the qualified S11 runtime (course-artifacts.yaml records the uv.lock hash).
+# Exact pins = the qualified S10 runtime (course-artifacts.yaml records the uv.lock hash).
 dependencies = [
     "mlflow==3.16.1",
     "scikit-learn==1.9.1",

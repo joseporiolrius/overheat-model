@@ -1,4 +1,4 @@
-"""[client] Train one tracked overheat classifier run (S11).
+"""[client] Train one tracked overheat classifier run (S10).
 
     export MLFLOW_TRACKING_URI=http://127.0.0.1:5000
     uv run python src/train.py --c 1.0 --run-name baseline-c1

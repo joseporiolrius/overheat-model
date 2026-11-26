@@ -1,5 +1,5 @@
-# overheat-model course artifact manifest (S11). Schema: dbai/course-artifacts/v1
-# (esade-devops contracts/course-artifacts.schema.md). Records the qualified S11 lab runtime.
+# overheat-model course artifact manifest (S10). Schema: dbai/course-artifacts/v1
+# (esade-devops contracts/course-artifacts.schema.md). Records the qualified S10 lab runtime.
 schema: dbai/course-artifacts/v1
 baseline_version: "1.0.0"
 
@@ -8,7 +8,7 @@ artifacts:
     kind: runtime_dependency
     status: qualified
     identity:
-      name: overheat-model S11 runtime (python 3.12; mlflow 3.16.1, scikit-learn 1.9.1, pandas 3.0.6, pyarrow 25.0.1)
+      name: overheat-model S10 runtime (python 3.12; mlflow 3.16.1, scikit-learn 1.9.1, pandas 3.0.6, pyarrow 25.0.1)
       version: "mlflow==3.16.1 scikit-learn==1.9.1 pandas==3.0.6 pyarrow==25.0.1"
       lock_hash: sha256:1b1d5a44f5d134d883c02c2d5b397127dfb3a58bad2b85eec67395dc30d8031e   # uv.lock
     evidence:
@@ -18,14 +18,14 @@ artifacts:
         command_or_interaction: "uv sync --locked; uv run mlflow server --host 127.0.0.1 --port 5000 --backend-store-uri sqlite:///mlflow.db --artifacts-destination ./mlartifacts; uv run python src/check_tracking.py; ssh -N -L 5000:127.0.0.1:5000"
         observed_result: "sync 3.6 s; versions as pinned; listener 127.0.0.1:5000 only (private IP + public IP refused); diagnosis exit 2/2/2/0; server run + artifact in mlartifacts/; raw unset-URI run went to /tmp/elsewhere (server count unchanged); run survived restart; tunnel UI MLflow 3.16.1; k8s objects 22/22; tampered lock exit 2"
         time_utc: "2026-09-25T14:54:00Z"
-        limitation: "amd64 only; S10 monitoring stack not installed on this VM (coexistence is ML-07)"
+        limitation: "amd64 only; S9 monitoring stack not installed on this VM (coexistence is ML-07)"
       - source_revision: oriolrius/overheat-model@a1bdcdc
         artifact_revision: "uv.lock sha256:1b1d5a44f5d134d883c02c2d5b397127dfb3a58bad2b85eec67395dc30d8031e"
-        scenario: "ML-07 component rehearsal on the operations VM with the S9 workbench (chart 0.2.1) and S10 monitoring running: cold uv sync, 6 c runs + bad run + class_weight sweep, register v1/v2/v3, gates; 5 s health sampler; controller stop/start + documented server restart"
+        scenario: "ML-07 component rehearsal on the operations VM with the S8 workbench (chart 0.2.1) and S9 monitoring running: cold uv sync, 6 c runs + bad run + class_weight sweep, register v1/v2/v3, gates; 5 s health sampler; controller stop/start + documented server restart"
         command_or_interaction: "evidence/ml-07/rehearse-vm.sh + fingerprint.sh (esade-devops); console.sh stop/start ml01"
         observed_result: "uv sync 4.0 s; server 36.6 s; data 17.4 s; runs 6.1-8.5 s; register ~3 s; gates v1 0 / v2 1 / v3 0; pods 7/7, probe_success 1 in 24/24 samples, WorkbenchDown never firing, min available memory 3541 MiB of 7816; after stop/start: runs/versions/70 artifact files/mlflow.db identical, v1 loads and passes"
         time_utc: "2026-09-25T15:35:00Z"
-        limitation: "one VM, amd64; the S10 probe needed port 80 from the VM's own EIP (hairpin) — see ML-07 notes"
+        limitation: "one VM, amd64; the S9 probe needed port 80 from the VM's own EIP (hairpin) — see ML-07 notes"
   - id: image-mlflow-fallback
     kind: image
     status: qualified

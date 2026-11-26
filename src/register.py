@@ -1,4 +1,4 @@
-"""[client] Register a tracked run's model as the next version of a registered model (S11).
+"""[client] Register a tracked run's model as the next version of a registered model (S10).
 
     uv run python src/register.py --run-id <RUN_ID> --name overheat-classifier
 

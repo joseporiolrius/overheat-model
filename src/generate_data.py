@@ -1,4 +1,4 @@
-"""[client] Generate the seeded synthetic overheat dataset (S11).
+"""[client] Generate the seeded synthetic overheat dataset (S10).
 
     uv run python src/generate_data.py --machines 5 --rows 216000 --out data/readings.parquet [--seed 42]
 

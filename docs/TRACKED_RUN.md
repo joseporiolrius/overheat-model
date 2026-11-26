@@ -1,6 +1,6 @@
-# What a tracked run records (S11 pre-class handout)
+# What a tracked run records (S10 pre-class handout)
 
-> Read before Session 11 (about 10 minutes). It explains what MLflow stores for every training run in this
+> Read before Session 10 (about 10 minutes). It explains what MLflow stores for every training run in this
 > lab, and why each piece matters when someone asks "which model is in production, and how did it
 > get there?"
 
@@ -70,9 +70,9 @@ train.py (run) → compare in UI → register.py (version N) → quality_gate.py
 
 The gate reads `accuracy` from the run behind version N. It exits **0** when accuracy ≥ 0.85, **1**
 when below, and **2** when it cannot evaluate. A CI step fails on any non-zero code, so a bad model
-never reaches promotion. In S12 the same pattern gates your RAG release on retrieval quality.
+never reaches promotion. In S11 the same pattern gates your RAG release on retrieval quality.
 
-## 7. Questions you should be able to answer after S11
+## 7. Questions you should be able to answer after S10
 
 1. Which `c` won in your sweep, and how would you rebuild that exact model in six months?
 2. Why did the model without `temp_diff` score so much lower, in terms of the physical machines?

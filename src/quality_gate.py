@@ -1,11 +1,11 @@
-"""[client] Quality gate: does a registered model version meet the accuracy bar? (S11)
+"""[client] Quality gate: does a registered model version meet the accuracy bar? (S10)
 
     uv run python src/quality_gate.py --name overheat-classifier --version 1 --min-accuracy 0.85
     echo $?        # 0 = PASSED, 1 = REJECTED, 2 = cannot evaluate (never a pass)
 
 The gate reads `accuracy` from the run linked to exactly that model version, then prints the
 measured value and the threshold. Accuracy equal to the threshold passes. The exit code is the whole
-interface: a CI step (S12) fails on any non-zero code, and the pipeline stops before promotion.
+interface: a CI step (S11) fails on any non-zero code, and the pipeline stops before promotion.
 """
 
 from __future__ import annotations

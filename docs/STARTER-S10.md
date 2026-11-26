@@ -1,9 +1,10 @@
-# S11 starter — `starter-s11-v1.0.1`
+# S10 starter — `starter-s10-v2.0.0`
 
-**Ref:** `starter-s11-v1.0.1` (annotated tag on the course template `joseporiolrius/overheat-model`).
-It is a documentation-only PATCH of `starter-s11-v1.0.0` (`0fa820a`, the initial scaffold): the
-README, this file and `docs/TRACKED_RUN.md` match the S11 deck and lab video; no runtime file
-changed (`uv.lock`, `src/`, `scripts/` are identical). Tags are immutable: fixes ship as a new tag,
+**Ref:** `starter-s10-v2.0.0` (annotated tag on the course template `joseporiolrius/overheat-model`).
+It carries the DBAI 26/27 session numbers (decision-15: this lab is Session 10). Compared with the
+initial scaffold (`0fa820a`) only documentation and docstrings changed: the README, this file and
+`docs/TRACKED_RUN.md` match the S10 deck and lab video; no runtime behaviour changed (`uv.lock` and
+the code paths are identical). Tags are immutable: fixes ship as a new tag,
 never by moving an existing one.
 
 ## How students get it (no upstream import)
@@ -15,13 +16,13 @@ never by moving an existing one.
    repository**. Name it `overheat-model`, visibility **Private**. The copy starts with its own
    single root commit.
 2. **Settings → Collaborators**: add the professor's course account `joseporiolrius`.
-3. On your existing S8–S10 VM, with the SSH key you set up in Session 2:
+3. On your existing S7–S9 VM, with the SSH key you set up in Session 2:
    `git clone git@github.com:<you>/overheat-model.git ~/overheat-model`, then follow `README.md`
    from §0. (The course lab video clones on a laptop and copies with `scp -r` only because its
    recording VM holds no GitHub credential.)
 
 There is no `upstream` remote and no merge ceremony. Your `ai-workbench` and `hello-world`
-repositories are not touched by S11.
+repositories are not touched by S10.
 
 ## Provided (instructor-owned)
 
@@ -33,14 +34,14 @@ repositories are not touched by S11.
 | `src/register.py`, `src/quality_gate.py` | registry version with source-run check; accuracy gate (0 pass, 1 reject, 2 cannot evaluate) |
 | `src/tracking.py`, `src/check_tracking.py` | tracking-server guard + diagnosis |
 | `scripts/mlflow-fallback.sh` | container fallback `ghcr.io/oriolrius/mlflow:v3.16.1@sha256:06058cc8…` |
-| `README.md`, `docs/TRACKED_RUN.md`, `docs/STARTER-S11.md` | runbook, pre-class handout, these notes |
+| `README.md`, `docs/TRACKED_RUN.md`, `docs/STARTER-S10.md` | runbook, pre-class handout, these notes |
 | `course-artifacts.yaml` | qualified runtime lock + fallback image records |
 | `JOURNAL.md` (template), `evidence/.gitkeep`, `.gitignore` | journal/evidence scaffold; `mlflow.db`, `mlartifacts/`, `mlruns/`, `data/` ignored |
 
-Input revisions: ec2-console `operations` profile (t3.large, k3s v1.30.5+k3s1), with the S9/S10
+Input revisions: ec2-console `operations` profile (t3.large, k3s v1.30.5+k3s1), with the S8/S9
 workbench and monitoring running alongside; the reference scores are in `README.md` §6 and §11.
 
-## You author in S11 (never shipped)
+## You author in S10 (never shipped)
 
 - Your runs, registry versions and gate results. They live on your VM (`mlflow.db`, `mlartifacts/`),
   never in Git.

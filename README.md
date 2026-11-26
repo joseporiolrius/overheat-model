@@ -1,11 +1,11 @@
-# overheat-model — S11 MLflow lab
+# overheat-model — S10 MLflow lab
 
 Your third course repository, a private copy of the course template. You track, compare, register
 and gate a predictive-maintenance classifier (5 machines, synthetic temperature readings, binary
 `overheat` label) with **MLflow on your own EC2 VM**.
 
 MLflow runs as a plain `uv run` process **outside Kubernetes**. There is no Helm chart, no CI release
-and no extra cloud service. Your S9/S10 workbench and monitoring on k3s keep running untouched.
+and no extra cloud service. Your S8/S9 workbench and monitoring on k3s keep running untouched.
 
 Every command below is labelled with where it runs:
 
@@ -18,16 +18,16 @@ Every command below is labelled with where it runs:
 ## 0. Before class: preflight (5 minutes)
 
 - Read [`docs/TRACKED_RUN.md`](docs/TRACKED_RUN.md), the two-page "what a tracked run records" handout.
-- On the VM: `df -h /` must show **at least 5 GB free** (Prometheus from S10 keeps writing to disk).
-  `free -m` should show about 3 GB available with your S10 stack running.
+- On the VM: `df -h /` must show **at least 5 GB free** (Prometheus from S9 keeps writing to disk).
+  `free -m` should show about 3 GB available with your S9 stack running.
 - On your laptop: check that SSH port forwarding works (`ssh -L …`, §3). On Windows use PowerShell's
   OpenSSH or the VS Code port-forward panel.
-- Keep your S9/S10 workbench and monitoring running. The lab was rehearsed next to them on a
+- Keep your S8/S9 workbench and monitoring running. The lab was rehearsed next to them on a
   t3.large, and they stay healthy (§11).
 
 ## 1. Get the code and the locked environment
 
-Create your private copy first (`docs/STARTER-S11.md`): the course template
+Create your private copy first (`docs/STARTER-S10.md`): the course template
 `joseporiolrius/overheat-model` → **Use this template** → Private; then add the professor's course
 account `joseporiolrius` as collaborator. Then clone it **on the VM**, with the SSH key you set up in
 Session 2:
@@ -284,7 +284,7 @@ echo $?    # 1   REJECTED: overheat-classifier v2 accuracy 0.7715 < 0.85 (run c1
     server, or an invalid threshold. It is **never** reported as a pass.
 - **Who reads the exit code.** A CI step, such as a GitHub Actions `run:` line, fails on any non-zero
   exit code, and every later step (promotion, deploy) is skipped. Deploys are blocked by the gate, not
-  debated in a meeting. In S12 the same pattern gates your RAG release on golden-set retrieval
+  debated in a meeting. In S11 the same pattern gates your RAG release on golden-set retrieval
   (`hit@3 >= 0.8`) instead of accuracy.
 - **A gate that cannot fail is not a gate.** The same version 2 with `--min-accuracy 0.5` passes
   (exit 0): the threshold is policy and lives in the pipeline file, not in someone's shell. An
@@ -315,7 +315,7 @@ echo $?    # 1   REJECTED: overheat-classifier v2 accuracy 0.7715 < 0.85 (run c1
   stays on disk.
 - **Restart:** run the §2 command again from `~/overheat-model`. All runs and model versions come
   back, because they live in those two paths. Then re-open session 2 with the tunnel (§3).
-- **Stop the VM when you are not working,** between S11 and S12 too. Stopping the VM keeps its
+- **Stop the VM when you are not working,** between S10 and S11 too. Stopping the VM keeps its
   disk (and your MLflow data). The server does not auto-start: after the VM starts, repeat §2
   and §3.
 - Nothing here creates a Kubernetes object, a CI workflow or an AWS resource.
@@ -350,9 +350,9 @@ same MLflow 3.16.1, amd64/arm64, recorded in `course-artifacts.yaml`. It uses th
 4. **Return to the normal path.** Once `uv sync --locked` works again, start the §2 command. Runs and
    versions created during the fallback are still there.
 
-## 11. Reference rehearsal (course VM, t3.large, S9/S10 stack running)
+## 11. Reference rehearsal (course VM, t3.large, S8/S9 stack running)
 
-Measured 2026-09-25 on an ec2-console operations VM (2 vCPU, 7.8 GB), with the workbench and S10
+Measured 2026-09-25 on an ec2-console operations VM (2 vCPU, 7.8 GB), with the workbench and S9
 monitoring running the whole time:
 
 | Step | Time |
@@ -389,7 +389,7 @@ overheat-model/
 ├── scripts/mlflow-fallback.sh                      # container fallback server (§10)
 ├── src/tracking.py, src/check_tracking.py         # tracking-server guard + diagnosis
 ├── docs/TRACKED_RUN.md                              # the two-page pre-class handout
-├── docs/STARTER-S11.md                             # starter ref, provided vs authored, template-copy steps
+├── docs/STARTER-S10.md                             # starter ref, provided vs authored, template-copy steps
 ├── evidence/.gitkeep                               # your screenshots
 ├── JOURNAL.md                                      # your journal
 └── .gitignore      # mlflow.db, mlartifacts/, mlruns/, data/ stay on the VM
